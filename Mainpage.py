@@ -12,7 +12,7 @@ class Main(QMainWindow, form_class):
         super().__init__()
         self.Signal_login = False
         self.INFO_login = []
-        self.conn = p.connect(host='localhost', port=3306, user='root', password='00000000',
+        self.conn = p.connect(host='localhost', port=3306, user='root', password='0000',
                          db='beaconapp', charset='utf8')
         # 커서 획득
         self.c = self.conn.cursor()
@@ -38,7 +38,10 @@ class Main(QMainWindow, form_class):
         self.training_btnSW.setCurrentIndex(0)
         self.training_btnSW2.setCurrentIndex(0)
         self.training_infoSW.setCurrentIndex(0)
-
+        self.join_room_btn.clicked.connect(self.recordJointime)
+        self.comeback_btn.clicked.connect(self.recordComebacktime)
+        self.leave_btn.clicked.connect(self.recordLeavetime)
+        self.out_btn.clicked.connect(self.recordExcursiontime)
 
     def moveAttendPage(self):
         self.login_SW.setCurrentIndex(6)
@@ -57,27 +60,83 @@ class Main(QMainWindow, form_class):
     def moveLoginPage(self):
         self.login_SW.setCurrentIndex(1)
 
-
+    def recordJointime(self):
+        now = datetime.now()
+        print(now)
+        date = now.date()
+        self.jointime = now.strftime('%Y-%m-%d %H:%M:%S')
+        self.c.execute(f"update person_info set entrance  = '{self.jointime}'where namedate = '{self.student_name}{date}'")
+        self.conn.commit()
+        self.traininginfocheck()
+    def recordLeavetime(self):
+        now = datetime.now()
+        date = now.date()
+        self.leavetime = now.strftime('%Y-%m-%d %H:%M:%S')
+        self.c.execute(f"update person_info set leave  = '{self.leavetime}'where namedate = '{self.student_name}{date}'")
+        self.conn.commit()
+        self.traininginfocheck()
+    def recordExcursiontime(self):
+        now = datetime.now()
+        date = now.date()
+        self.excursion = now.strftime('%Y-%m-%d %H:%M:%S')
+        self.c.execute(f"update person_info set excursion  = '{self.excursion}'where namedate = '{self.student_name}{date}'")
+        self.conn.commit()
+        self.traininginfocheck()
+    def recordComebacktime(self):
+        now = datetime.now()
+        date = now.date()
+        self.comeback = now.strftime('%Y-%m-%d %H:%M:%S')
+        self.c.execute(f"update person_info set Comeback  = '{self.comeback}'where namedate = '{self.student_name}{date}'")
+        self.conn.commit()
+        self.traininginfocheck()
     def traininginfocheck(self):
-        self.c.execute(f"select * from person_info where id_num = {self.id_num} and date = '2023-01-02'")
+        now = datetime.now()
+        date = now.date()
+        self.c.execute(f"select * from person_info where id_num = {self.id_num} and date = '{date}'")
         traininginfo = self.c.fetchall()
         print(traininginfo)
         if traininginfo[0][2] == None:
             self.training_infoSW.setCurrentIndex(0)
             self.training_btnSW.setCurrentIndex(0)
             self.training_btnSW2.setCurrentIndex(0)
-        elif traininginfo[0][2] !=None and traininginfo[0][3] == None :
+            self.Join_lbl.setText('')
+            self.Leave_lbl.setText('')
+            self.Comeback_lbl.setText('')
+            self.Out_lbl.setText('')
+
+        elif traininginfo[0][2] !=None and traininginfo[0][3] == None:
             self.training_infoSW.setCurrentIndex(1)
             self.training_btnSW.setCurrentIndex(2)
             self.training_btnSW2.setCurrentIndex(1)
+            self.Join_lbl.setText(f'{traininginfo[0][2]}')
+            self.Leave_lbl.setText('')
+            if traininginfo[0][5] == None:
+                self.Out_lbl.setText('')
+                self.Comeback_lbl.setText('')
+            else :
+                self.Out_lbl.setText(f'{traininginfo[0][5]}')
+                if traininginfo[0][4] == None :
+                    self.Comeback_lbl.setText('')
+                else :
+                    self.Comeback_lbl.setText(f'{traininginfo[0][4]}')
+
         elif traininginfo[0][2] !=None and traininginfo[0][3] != None :
             self.training_infoSW.setCurrentIndex(1)
             self.training_btnSW.setCurrentIndex(1)
             self.training_btnSW2.setCurrentIndex(0)
-        elif traininginfo[0][2] !=None and traininginfo[0][4] != None :
-            self.training_infoSW.setCurrentIndex(2)
-            self.training_btnSW.setCurrentIndex(3)
-            self.training_btnSW2.setCurrentIndex(0)
+            self.Join_lbl.setText(f'{traininginfo[0][2]}')
+            self.Leave_lbl.setText(f'{traininginfo[0][3]}')
+            if traininginfo[0][5] == None:
+                self.Out_lbl.setText('')
+                self.Comeback_lbl.setText('')
+            else :
+                self.Out_lbl.setText(f'{traininginfo[0][5]}')
+                if traininginfo[0][4] == None :
+                    self.Comeback_lbl.setText('')
+                else :
+                    self.Comeback_lbl.setText(f'{traininginfo[0][4]}')
+
+
 
     def scheduleView(self):
         self.schedule_listView.clear()

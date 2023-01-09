@@ -651,7 +651,7 @@
       </rect>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>2</number>
      </property>
      <widget class="QWidget" name="page_10">
       <widget class="QLabel" name="sh_label_6">
@@ -1170,10 +1170,10 @@
       </rect>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>3</number>
      </property>
      <widget class="QWidget" name="page_13">
-      <widget class="QPushButton" name="chat_send_2">
+      <widget class="QPushButton" name="join_room_btn">
        <property name="geometry">
         <rect>
          <x>10</x>
@@ -1197,7 +1197,7 @@
       </widget>
      </widget>
      <widget class="QWidget" name="page_14">
-      <widget class="QPushButton" name="chat_send_3">
+      <widget class="QPushButton" name="leave_btn">
        <property name="geometry">
         <rect>
          <x>10</x>
@@ -1256,11 +1256,11 @@
       </rect>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="page_18"/>
      <widget class="QWidget" name="page_17">
-      <widget class="QPushButton" name="chat_send_5">
+      <widget class="QPushButton" name="out_btn">
        <property name="geometry">
         <rect>
          <x>10</x>
