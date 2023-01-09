@@ -63,13 +63,21 @@ class Main(QMainWindow, form_class):
         traininginfo = self.c.fetchall()
         print(traininginfo)
         if traininginfo[0][2] == None:
-            pass #입실전 / 입실버튼/버튼x
+            self.training_infoSW.setCurrentIndex(0)
+            self.training_btnSW.setCurrentIndex(0)
+            self.training_btnSW2.setCurrentIndex(0)
         elif traininginfo[0][2] !=None and traininginfo[0][3] == None :
-            pass #입실 / 퇴실버튼/외출버튼
+            self.training_infoSW.setCurrentIndex(1)
+            self.training_btnSW.setCurrentIndex(2)
+            self.training_btnSW2.setCurrentIndex(1)
         elif traininginfo[0][2] !=None and traininginfo[0][3] != None :
-            pass #퇴실 / 버튼x/버튼x
+            self.training_infoSW.setCurrentIndex(1)
+            self.training_btnSW.setCurrentIndex(1)
+            self.training_btnSW2.setCurrentIndex(0)
         elif traininginfo[0][2] !=None and traininginfo[0][4] != None :
-            pass #입실 / 복귀버튼/ 버튼x
+            self.training_infoSW.setCurrentIndex(2)
+            self.training_btnSW.setCurrentIndex(3)
+            self.training_btnSW2.setCurrentIndex(0)
 
     def scheduleView(self):
         self.schedule_listView.clear()
