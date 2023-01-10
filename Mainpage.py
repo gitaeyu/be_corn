@@ -84,6 +84,7 @@ class Main(QMainWindow, form_class):
     #채팅방을 불러오는 기능으로 아직 미완성
     def refresh_message_list(self):
         self.message_list.clear()
+        # self.c.execute(f"select message.*,person.Name from message join person on message.id_number = person.id_num where person.name = '김기태' or message.receiver = '이상복'")
 
     #출결현황 페이지로 이동하며 출석 / 지각 등의 정보를 표시해준다.
     def moveAtt_presentPage(self):
