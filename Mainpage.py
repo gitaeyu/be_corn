@@ -12,7 +12,8 @@ class Main(QMainWindow, form_class):
         super().__init__()
         self.Signal_login = False
         self.INFO_login = []
-        self.conn = p.connect(host='localhost', port=3306, user='root', password='00000000',
+
+        self.conn = p.connect(host='localhost', port=3306, user='root', password='0000',
                          db='beaconapp', charset='utf8')
         # 커서 획득
         self.c = self.conn.cursor()
@@ -84,7 +85,14 @@ class Main(QMainWindow, form_class):
     #채팅방을 불러오는 기능으로 아직 미완성
     def refresh_message_list(self):
         self.message_list.clear()
-        # self.c.execute(f"select message.*,person.Name from message join person on message.id_number = person.id_num where person.name = '김기태' or message.receiver = '이상복'")
+
+        self.c.execute(f"select a.* from (select message.*,person.name from message \
+                        join person on message.id_number = person.id_num where (id_number, Time) \
+                        in (select id_number, max(Time) as Time from message group by id_number)\
+                        order by Time)  as a where receiver ='{self.user_name}'")
+        message_room_list = self.c.fetchall()
+        print(message_room_list)
+
 
     #출결현황 페이지로 이동하며 출석 / 지각 등의 정보를 표시해준다.
     def moveAtt_presentPage(self):
@@ -193,7 +201,7 @@ class Main(QMainWindow, form_class):
         print(now)
         date = now.date()
         jointime = now.strftime('%Y-%m-%d %H:%M:%S')
-        self.c.execute(f"update person_info set entrance  = '{jointime}' where namedate = '{self.student_name}{date}'")
+        self.c.execute(f"update person_info set entrance  = '{jointime}' where namedate = '{self.user_name}{date}'")
         self.conn.commit()
         self.traininginfocheck()
 
@@ -202,7 +210,7 @@ class Main(QMainWindow, form_class):
         now = datetime.now()
         date = now.date()
         leavetime = now.strftime('%Y-%m-%d %H:%M:%S')
-        self.c.execute(f"update person_info set Leave_time  = '{leavetime}' where namedate = '{self.student_name}{date}'")
+        self.c.execute(f"update person_info set Leave_time  = '{leavetime}' where namedate = '{self.user_name}{date}'")
         self.conn.commit()
         self.traininginfocheck()
 
@@ -211,7 +219,7 @@ class Main(QMainWindow, form_class):
         now = datetime.now()
         date = now.date()
         excursion = now.strftime('%Y-%m-%d %H:%M:%S')
-        self.c.execute(f"update person_info set excursion  = '{excursion}'where namedate = '{self.student_name}{date}'")
+        self.c.execute(f"update person_info set excursion  = '{excursion}'where namedate = '{self.user_name}{date}'")
         self.conn.commit()
         self.traininginfocheck()
 
@@ -220,7 +228,7 @@ class Main(QMainWindow, form_class):
         now = datetime.now()
         date = now.date()
         comeback = now.strftime('%Y-%m-%d %H:%M:%S')
-        self.c.execute(f"update person_info set Comeback  = '{comeback}'where namedate = '{self.student_name}{date}'")
+        self.c.execute(f"update person_info set Comeback  = '{comeback}'where namedate = '{self.user_name}{date}'")
         self.conn.commit()
         self.traininginfocheck()
 
@@ -327,7 +335,7 @@ class Main(QMainWindow, form_class):
         self. INFO_login = self.c.fetchall()
         print(self.INFO_login)
         self.id_num=self.INFO_login[0][0]
-        self.student_name=self.INFO_login[0][5]
+        self.user_name=self.INFO_login[0][5]
         now = datetime.now()
         date = now.date()
         if self.id not in self. INFO_login[0]:
@@ -342,12 +350,12 @@ class Main(QMainWindow, form_class):
             self.login_id_lineEdit.clear()
             self.login_pw_lineEdit.clear()
             self.Stack_W_login.setCurrentIndex(1)
-            self.logon_label.setText(f"{self.student_name}님 안녕하세요")
+            self.logon_label.setText(f"{self.user_name}님 안녕하세요")
             print('성공')
 
             self.c.execute(f"Insert into person_info (id_Num,Name,Date,NameDate) values \
-                            ({self.id_num},'{self.student_name}','{date}','{self.student_name}{date}')\
-                            on duplicate key update Name = '{self.student_name}', Date = '{date}'")
+                            ({self.id_num},'{self.user_name}','{date}','{self.user_name}{date}')\
+                            on duplicate key update Name = '{self.user_name}', Date = '{date}'")
 
     #로그아웃
     def logout(self):
