@@ -26,7 +26,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>6</number>
+    <number>2</number>
    </property>
    <widget class="QWidget" name="page_2">
     <widget class="QPushButton" name="schedule_btn">
@@ -350,8 +350,25 @@
        <height>501</height>
       </rect>
      </property>
+     <property name="styleSheet">
+      <string notr="true">QCalendarWidget QToolButton{
+background-color:white;
+color: black;
+icon-size: 30px;
+}
+</string>
+     </property>
+     <property name="gridVisible">
+      <bool>false</bool>
+     </property>
      <property name="horizontalHeaderFormat">
       <enum>QCalendarWidget::ShortDayNames</enum>
+     </property>
+     <property name="verticalHeaderFormat">
+      <enum>QCalendarWidget::ISOWeekNumbers</enum>
+     </property>
+     <property name="navigationBarVisible">
+      <bool>true</bool>
      </property>
      <property name="dateEditEnabled">
       <bool>false</bool>
@@ -575,26 +592,6 @@
     </widget>
    </widget>
    <widget class="QWidget" name="page_9">
-    <widget class="QTextBrowser" name="chat_textBrowser">
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>40</y>
-       <width>401</width>
-       <height>481</height>
-      </rect>
-     </property>
-    </widget>
-    <widget class="QLineEdit" name="chat_lineEdit">
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>530</y>
-       <width>401</width>
-       <height>51</height>
-      </rect>
-     </property>
-    </widget>
     <widget class="QPushButton" name="chat_send">
      <property name="geometry">
       <rect>
@@ -637,6 +634,143 @@
      </property>
      <property name="text">
       <string>메인화면으로</string>
+     </property>
+    </widget>
+    <widget class="QComboBox" name="consult_cb">
+     <property name="geometry">
+      <rect>
+       <x>430</x>
+       <y>110</y>
+       <width>76</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <item>
+      <property name="text">
+       <string/>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>이상복</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>조동현</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>류홍걸</string>
+      </property>
+     </item>
+    </widget>
+    <widget class="QStackedWidget" name="messageSW">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>20</y>
+       <width>411</width>
+       <height>581</height>
+      </rect>
+     </property>
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <widget class="QWidget" name="page_20">
+      <widget class="QListWidget" name="message_list">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>20</y>
+         <width>401</width>
+         <height>531</height>
+        </rect>
+       </property>
+      </widget>
+     </widget>
+     <widget class="QWidget" name="page_21">
+      <widget class="QTextBrowser" name="chat_textBrowser">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>20</y>
+         <width>401</width>
+         <height>481</height>
+        </rect>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="chat_lineEdit">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>510</y>
+         <width>401</width>
+         <height>51</height>
+        </rect>
+       </property>
+      </widget>
+     </widget>
+    </widget>
+    <widget class="QLabel" name="label">
+     <property name="geometry">
+      <rect>
+       <x>430</x>
+       <y>50</y>
+       <width>111</width>
+       <height>51</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">font: 75 13pt &quot;경기천년바탕 Bold&quot;;</string>
+     </property>
+     <property name="text">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;상담 교수&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="chat_start_btn">
+     <property name="geometry">
+      <rect>
+       <x>430</x>
+       <y>390</y>
+       <width>161</width>
+       <height>51</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QPushButton{
+	font: 12pt &quot;GyeonggiBatang&quot;;
+	color: rgb(251, 86, 7);
+	background-color: white;
+	border: 2px solid rgb(251, 86, 7);
+	border-radius: 5px;
+}</string>
+     </property>
+     <property name="text">
+      <string>상담 시작</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="see_chat_list_btn">
+     <property name="geometry">
+      <rect>
+       <x>430</x>
+       <y>320</y>
+       <width>161</width>
+       <height>51</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QPushButton{
+	font: 12pt &quot;GyeonggiBatang&quot;;
+	color: rgb(251, 86, 7);
+	background-color: white;
+	border: 2px solid rgb(251, 86, 7);
+	border-radius: 5px;
+}</string>
+     </property>
+     <property name="text">
+      <string>채팅방 보기</string>
      </property>
     </widget>
    </widget>

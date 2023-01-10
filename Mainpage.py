@@ -18,8 +18,8 @@ class Main(QMainWindow, form_class):
         self.c = self.conn.cursor()
         self.setupUi(self)
         self.login_id_lineEdit.setText("") # 아무것도입력안할시 오류나서 미리 설정해둠.
-        self.Stack_W_login.setCurrentIndex(0)
-        self.login_SW.setCurrentIndex(0)        # 스택위젯
+        self.Stack_W_login.setCurrentIndex(0) # 스택위젯
+        self.login_SW.setCurrentIndex(0)        # 스택위젯 - 초기화면
         self.login_btn.clicked.connect(self.moveLoginPage)
         self.login_btn2.clicked.connect(self.login_Check)
         self.logout_btn.clicked.connect(self.logout)
@@ -45,30 +45,91 @@ class Main(QMainWindow, form_class):
         self.out_btn.clicked.connect(self.recordExcursiontime)
         self.attendance_present_btn.clicked.connect(self.moveAtt_presentPage)
         self.back_btn3.clicked.connect(self.moveAttendPage)
+        self.chat_send.clicked.connect(self.sendMessage)
+        self.chat_start_btn.clicked.connect(self.chat_start)
+        self.see_chat_list_btn.clicked.connect(self.see_chatlist)
+
+    #채팅페이지의 채팅방보기를 클릭하면 실행되는 기능으로 마지막 메세지를 기준으로 하여 리스트 생성하게 하려고 함.
+    def see_chatlist(self):
+        self.messageSW.setCurrentIndex(0)
+        self.refresh_message_list()
+
+    #채팅페이지의 상담 시작 버튼을 클릭하면 실행되는 기능으로 채팅창으로 이동하며 콤보박스의 이름에 따라 각 채팅방이 다른것처럼 보이게 함.
+    def chat_start(self):
+        self.consultant = self.consult_cb.currentText()
+        if self.consultant == '' :
+            QMessageBox.critical(self, "교수 정보 없음", "콤보박스를 선택하거나 채팅방을 더블클릭 해주세요")
+            return
+        self.messageSW.setCurrentIndex(1)
+        self.refresh_chat_textBrowser()
+
+    #메세지를 보내는 기능으로 DB에 저장한다.
+    def sendMessage(self):
+        a = self.chat_lineEdit.text()
+        now = datetime.now()
+        chat_time = now.strftime('%Y-%m-%d %H:%M:%S')
+        self.c.execute(f"Insert into message values ({self.id_num},'{a}','{chat_time}','{self.consultant}')")
+        self.conn.commit()
+        self.refresh_chat_textBrowser()
+
+    #메세지를 불러오는 기능으로 접속한 ID와 Combobox 또는 채팅방 메세지 리스트의 Receiver가 누구냐에 따라 채팅방 불러옴.
+    def refresh_chat_textBrowser(self):
+        self.chat_textBrowser.clear()
+        self.c.execute(f"select message.*,person.Name from message join person on message.id_number = person.id_num \
+                        where message.id_number = {self.id_num} and Receiver = '{self.consultant}'")
+        chatlist = self.c.fetchall()
+        for i in chatlist:
+            self.chat_textBrowser.append(f'{i[2]}\n \n {i[4]} : {i[1]}\n')
+
+    #채팅방을 불러오는 기능으로 아직 미완성
+    def refresh_message_list(self):
+        self.message_list.clear()
+
+    #출결현황 페이지로 이동하며 출석 / 지각 등의 정보를 표시해준다.
     def moveAtt_presentPage(self):
         self.login_SW.setCurrentIndex(7)
         self.make_Att_present()
+
+    #비콘 출석페이지로 이동
     def moveAttendPage(self):
+        if self.Signal_login == False :
+            QMessageBox.critical(self, "로그인 정보 없음", "로그인해주세요")
+            return
         self.login_SW.setCurrentIndex(6)
         self.traininginfocheck()
+    #채팅페이지로 이동
     def moveChattingPage(self):
+        if self.Signal_login == False :
+            QMessageBox.critical(self, "로그인 정보 없음", "로그인해주세요")
+            return
         self.login_SW.setCurrentIndex(5)
+        self.messageSW.setCurrentIndex(0)
+        self.refresh_message_list()
+
+    #일정 페이지로 이동
     def moveSchedulePage(self):
+        if self.Signal_login == False :
+            QMessageBox.critical(self, "로그인 정보 없음", "로그인해주세요")
+            return
         self.login_SW.setCurrentIndex(2)
+
+    #일정페이지 내에서 일정 보기로 이동
     def moveScheduleViewPage(self):
         self.login_SW.setCurrentIndex(4)
         self.scheduleView()
 
+    #메인페이지로 이동
     def moveMainpage(self):
         self.login_SW.setCurrentIndex(0)
 
+    # 로그인 페이지로 이동
     def moveLoginPage(self):
         self.login_SW.setCurrentIndex(1)
-    # 출결현황 페이지
+
+    # 출결현황 페이지 - 쿼리문을 사용했어야 했는데 익숙치못해서 리스트 사용함. 조건문의 수정이 필요하다.
     def make_Att_present(self):
         self.c.execute(f"select a.*,b.수업시간,b.시작시간 from person_info as a join class_schedule as b on a.Date = b.훈련일자 where a.id_num = {self.id_num}")
         progress_info = self.c.fetchall()
-        print(progress_info)
 
         attendance = 0
         late = 0
@@ -79,8 +140,8 @@ class Main(QMainWindow, form_class):
         for i in progress_info:
             if i[3] == None or i[2] == None: # 퇴실 or 입실이 하나라도 안찍혔을때
                 absence+=1 #결석
-                continue
-            seconds = (i[3] - i[2]).total_seconds()
+                continue #그리고 다음날으로 넘어감
+            seconds = (i[3] - i[2]).total_seconds() # 퇴실시간에서 입실시간을 밴 시간
             latetime = datetime.strptime('09:21:00', '%H:%M:%S') #지각시간
             temptime = i[2].strftime('%H:%M:%S')
             jointime = datetime.strptime(f'{temptime}','%H:%M:%S') #입실시간
@@ -88,14 +149,14 @@ class Main(QMainWindow, form_class):
             leavetime = datetime.strptime(f'{temptime}','%H:%M:%S')
             earlyleavetime = datetime.strptime('17:00:00', '%H:%M:%S')
             if latetime < jointime : #지각시간 < 입실시간 하지만 퇴실시간은 있음.
-                if seconds < 14400:
+                if seconds < 14400: #있던 시간이 4시간보다 적으면 결석으로 처리해버림
                     absence+=1
-                    continue
+                    continue # 다음으로 넘어감
                 else :
                     late +=1
                     attendance +=1
 
-            elif leavetime < earlyleavetime :
+            elif leavetime < earlyleavetime : #퇴실시간이 정해진 시간보다 빠를때 조퇴로 체크
                 if seconds < 14400:
                     absence+=1
                     continue
@@ -110,8 +171,8 @@ class Main(QMainWindow, form_class):
                     attendance +=1
             if i[5] != None :
                 out +=1
-        print(len(progress_info))
-        print(attendance,late,earlyleave,out,absence)
+
+        #for문에서 정해진 출결현황에 따라 라벨 및 프로그레스바 등을 바꿔줌.
         self.attendance_lbl.setText(f'{attendance}')
         self.late_lbl.setText(f'{late}')
         self.earlyleave_lbl.setText(f'{earlyleave}')
@@ -125,9 +186,7 @@ class Main(QMainWindow, form_class):
         self.process_progress_ratio_pB.setValue(int(progress_ratio*100))
 
 
-
-
-
+    #입실 시간 기록
     def recordJointime(self):
         now = datetime.now()
         print(now)
@@ -136,6 +195,8 @@ class Main(QMainWindow, form_class):
         self.c.execute(f"update person_info set entrance  = '{jointime}' where namedate = '{self.student_name}{date}'")
         self.conn.commit()
         self.traininginfocheck()
+
+    #퇴실 시간 기록
     def recordLeavetime(self):
         now = datetime.now()
         date = now.date()
@@ -143,6 +204,8 @@ class Main(QMainWindow, form_class):
         self.c.execute(f"update person_info set Leave_time  = '{leavetime}' where namedate = '{self.student_name}{date}'")
         self.conn.commit()
         self.traininginfocheck()
+
+    #외출 시간 기록
     def recordExcursiontime(self):
         now = datetime.now()
         date = now.date()
@@ -150,6 +213,8 @@ class Main(QMainWindow, form_class):
         self.c.execute(f"update person_info set excursion  = '{excursion}'where namedate = '{self.student_name}{date}'")
         self.conn.commit()
         self.traininginfocheck()
+
+    #복귀 시간 기록
     def recordComebacktime(self):
         now = datetime.now()
         date = now.date()
@@ -157,14 +222,16 @@ class Main(QMainWindow, form_class):
         self.c.execute(f"update person_info set Comeback  = '{comeback}'where namedate = '{self.student_name}{date}'")
         self.conn.commit()
         self.traininginfocheck()
+
+    #당일 시간 기록에 따라 출결페이지의 버튼들의 stackwidget을 바꿔주고 라벨의 텍스트를 바꿔준다.
     def traininginfocheck(self):
 
         now = datetime.now()
         date = now.date()
         self.c.execute(f"select * from class_schedule where 훈련일자 = '{date}'")
         todaytraining = self.c.fetchall()
-        todaytraining_start = todaytraining[0][2].strftime("%H:%M:%S")
-        todaytraining_end = todaytraining[0][3].strftime("%H:%M:%S")
+        todaytraining_start = todaytraining[0][2]
+        todaytraining_end = todaytraining[0][3]
         self.today_training_lbl.setText(f'{todaytraining_start} ~{todaytraining_end}')
         self.c.execute(f"select * from person_info where id_num = {self.id_num} and date = '{date}'")
         traininginfo = self.c.fetchall()
@@ -216,7 +283,7 @@ class Main(QMainWindow, form_class):
                     self.Comeback_lbl.setText(f'{traininginfo[0][4].strftime("%H:%M:%S")}')
 
 
-
+    #일정 보기 기능
     def scheduleView(self):
         self.schedule_listView.clear()
         self.c.execute(f"SELECT * From Schedule Inner Join  person on person.id_num = schedule.id_num \
@@ -233,14 +300,19 @@ class Main(QMainWindow, form_class):
         print(self.datestring)
         self.selectedDate_lbl1.setText(self.date.toString("yyyy-MM-dd"))
         self.selectedDate_lbl2.setText(self.date.toString("yyyy-MM-dd"))
+
+    #일정 추가 페이지로 이동
     def moveScheduleAddPage(self):
         self.login_SW.setCurrentIndex(3)
+
+    #일정 추가 기능
     def scheduleAdd(self):
         schedule_contents = self.schedule_textEdit.toPlainText()
         self.c.execute(f"INSERT INTO Schedule VALUES ('{self.INFO_login[0][0]}','{self.datestring}','{schedule_contents}')")
         self.conn.commit()
         self.schedule_textEdit.clear()
         print("성공")
+
     # 로그인
     def login_Check (self):
 
