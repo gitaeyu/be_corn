@@ -1010,7 +1010,7 @@
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;통합심사과정훈련&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
     </widget>
-    <widget class="QLabel" name="sh_label_23">
+    <widget class="QLabel" name="today_training_lbl">
      <property name="geometry">
       <rect>
        <x>150</x>
@@ -1197,7 +1197,7 @@
       </widget>
      </widget>
      <widget class="QWidget" name="page_14">
-      <widget class="QPushButton" name="leave_btn">
+      <widget class="QPushButton" name="comeback_btn">
        <property name="geometry">
         <rect>
          <x>10</x>
@@ -1221,7 +1221,7 @@
       </widget>
      </widget>
      <widget class="QWidget" name="page_15">
-      <widget class="QPushButton" name="chat_send_4">
+      <widget class="QPushButton" name="leave_btn">
        <property name="geometry">
         <rect>
          <x>10</x>
@@ -1256,7 +1256,7 @@
       </rect>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="page_18"/>
      <widget class="QWidget" name="page_17">
@@ -1305,7 +1305,7 @@
       <string>홈으로</string>
      </property>
     </widget>
-    <widget class="QPushButton" name="Mainpage_btn4_2">
+    <widget class="QPushButton" name="attendance_present_btn">
      <property name="geometry">
       <rect>
        <x>30</x>

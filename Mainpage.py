@@ -12,7 +12,7 @@ class Main(QMainWindow, form_class):
         super().__init__()
         self.Signal_login = False
         self.INFO_login = []
-        self.conn = p.connect(host='localhost', port=3306, user='root', password='0000',
+        self.conn = p.connect(host='localhost', port=3306, user='root', password='00000000',
                          db='beaconapp', charset='utf8')
         # 커서 획득
         self.c = self.conn.cursor()
@@ -28,6 +28,7 @@ class Main(QMainWindow, form_class):
         self.Mainpage_btn1.clicked.connect(self.moveMainpage)        # 로그인페이지-홈버튼
         self.Mainpage_btn2.clicked.connect(self.moveMainpage)        # 일정페이지 - 홈버튼
         self.Mainpage_btn3.clicked.connect(self.moveMainpage)        # 채팅페이지 - 홈버튼
+        self.Mainpage_btn4.clicked.connect(self.moveMainpage)        # 출석페이지 - 홈버튼
         self.scheduleCalendar.clicked.connect(self.scheduleclick)
         self.Schedule_add.clicked.connect(self.moveScheduleAddPage)
         self.schedule_add_btn.clicked.connect(self.scheduleAdd)
@@ -42,7 +43,11 @@ class Main(QMainWindow, form_class):
         self.comeback_btn.clicked.connect(self.recordComebacktime)
         self.leave_btn.clicked.connect(self.recordLeavetime)
         self.out_btn.clicked.connect(self.recordExcursiontime)
-
+        self.attendance_present_btn.clicked.connect(self.moveAtt_presentPage)
+        self.back_btn3.clicked.connect(self.moveAttendPage)
+    def moveAtt_presentPage(self):
+        self.login_SW.setCurrentIndex(7)
+        self.make_Att_present()
     def moveAttendPage(self):
         self.login_SW.setCurrentIndex(6)
         self.traininginfocheck()
@@ -59,42 +64,112 @@ class Main(QMainWindow, form_class):
 
     def moveLoginPage(self):
         self.login_SW.setCurrentIndex(1)
+    # 출결현황 페이지
+    def make_Att_present(self):
+        self.c.execute(f"select a.*,b.수업시간,b.시작시간 from person_info as a join class_schedule as b on a.Date = b.훈련일자 where a.id_num = {self.id_num}")
+        progress_info = self.c.fetchall()
+        print(progress_info)
+
+        attendance = 0
+        late = 0
+        earlyleave = 0
+        out = 0
+        absence = 0
+
+        for i in progress_info:
+            if i[3] == None or i[2] == None: # 퇴실 or 입실이 하나라도 안찍혔을때
+                absence+=1 #결석
+                continue
+            seconds = (i[3] - i[2]).total_seconds()
+            latetime = datetime.strptime('09:21:00', '%H:%M:%S') #지각시간
+            temptime = i[2].strftime('%H:%M:%S')
+            jointime = datetime.strptime(f'{temptime}','%H:%M:%S') #입실시간
+            temptime = i[3].strftime('%H:%M:%S')
+            leavetime = datetime.strptime(f'{temptime}','%H:%M:%S')
+            earlyleavetime = datetime.strptime('17:00:00', '%H:%M:%S')
+            if latetime < jointime : #지각시간 < 입실시간 하지만 퇴실시간은 있음.
+                if seconds < 14400:
+                    absence+=1
+                    continue
+                else :
+                    late +=1
+                    attendance +=1
+
+            elif leavetime < earlyleavetime :
+                if seconds < 14400:
+                    absence+=1
+                    continue
+                else :
+                    earlyleave += 1
+                    attendance+=1
+            else :
+                if seconds < 14400:
+                    absence+=1
+                    continue
+                else :
+                    attendance +=1
+            if i[5] != None :
+                out +=1
+        print(len(progress_info))
+        print(attendance,late,earlyleave,out,absence)
+        self.attendance_lbl.setText(f'{attendance}')
+        self.late_lbl.setText(f'{late}')
+        self.earlyleave_lbl.setText(f'{earlyleave}')
+        self.out_lbl.setText(f'{out}')
+        self.absence_lbl.setText(f'{absence}')
+        attendance_ratio = attendance/140
+        self.my_attendance_ratio_lbl.setText(f'({round(attendance_ratio*100,2)}% \t {attendance}/140일)')
+        self.my_attendance_ratio_pB.setValue(int(attendance_ratio*100))
+        progress_ratio = len(progress_info)/140
+        self.process_progress_ratio_lbl.setText(f'({round(progress_ratio*100,2)}% \t {len(progress_info)}/140일)')
+        self.process_progress_ratio_pB.setValue(int(progress_ratio*100))
+
+
+
+
 
     def recordJointime(self):
         now = datetime.now()
         print(now)
         date = now.date()
-        self.jointime = now.strftime('%Y-%m-%d %H:%M:%S')
-        self.c.execute(f"update person_info set entrance  = '{self.jointime}'where namedate = '{self.student_name}{date}'")
+        jointime = now.strftime('%Y-%m-%d %H:%M:%S')
+        self.c.execute(f"update person_info set entrance  = '{jointime}' where namedate = '{self.student_name}{date}'")
         self.conn.commit()
         self.traininginfocheck()
     def recordLeavetime(self):
         now = datetime.now()
         date = now.date()
-        self.leavetime = now.strftime('%Y-%m-%d %H:%M:%S')
-        self.c.execute(f"update person_info set leave  = '{self.leavetime}'where namedate = '{self.student_name}{date}'")
+        leavetime = now.strftime('%Y-%m-%d %H:%M:%S')
+        self.c.execute(f"update person_info set Leave_time  = '{leavetime}' where namedate = '{self.student_name}{date}'")
         self.conn.commit()
         self.traininginfocheck()
     def recordExcursiontime(self):
         now = datetime.now()
         date = now.date()
-        self.excursion = now.strftime('%Y-%m-%d %H:%M:%S')
-        self.c.execute(f"update person_info set excursion  = '{self.excursion}'where namedate = '{self.student_name}{date}'")
+        excursion = now.strftime('%Y-%m-%d %H:%M:%S')
+        self.c.execute(f"update person_info set excursion  = '{excursion}'where namedate = '{self.student_name}{date}'")
         self.conn.commit()
         self.traininginfocheck()
     def recordComebacktime(self):
         now = datetime.now()
         date = now.date()
-        self.comeback = now.strftime('%Y-%m-%d %H:%M:%S')
-        self.c.execute(f"update person_info set Comeback  = '{self.comeback}'where namedate = '{self.student_name}{date}'")
+        comeback = now.strftime('%Y-%m-%d %H:%M:%S')
+        self.c.execute(f"update person_info set Comeback  = '{comeback}'where namedate = '{self.student_name}{date}'")
         self.conn.commit()
         self.traininginfocheck()
     def traininginfocheck(self):
+
         now = datetime.now()
         date = now.date()
+        self.c.execute(f"select * from class_schedule where 훈련일자 = '{date}'")
+        todaytraining = self.c.fetchall()
+        todaytraining_start = todaytraining[0][2].strftime("%H:%M:%S")
+        todaytraining_end = todaytraining[0][3].strftime("%H:%M:%S")
+        self.today_training_lbl.setText(f'{todaytraining_start} ~{todaytraining_end}')
         self.c.execute(f"select * from person_info where id_num = {self.id_num} and date = '{date}'")
         traininginfo = self.c.fetchall()
         print(traininginfo)
+
         if traininginfo[0][2] == None:
             self.training_infoSW.setCurrentIndex(0)
             self.training_btnSW.setCurrentIndex(0)
@@ -108,33 +183,37 @@ class Main(QMainWindow, form_class):
             self.training_infoSW.setCurrentIndex(1)
             self.training_btnSW.setCurrentIndex(2)
             self.training_btnSW2.setCurrentIndex(1)
-            self.Join_lbl.setText(f'{traininginfo[0][2]}')
+            self.Join_lbl.setText(f'{traininginfo[0][2].strftime("%H:%M:%S")}')
             self.Leave_lbl.setText('')
             if traininginfo[0][5] == None:
                 self.Out_lbl.setText('')
                 self.Comeback_lbl.setText('')
             else :
-                self.Out_lbl.setText(f'{traininginfo[0][5]}')
+                self.Out_lbl.setText(f'{traininginfo[0][5].strftime("%H:%M:%S")}')
+                self.training_btnSW.setCurrentIndex(1)
+                self.training_btnSW2.setCurrentIndex(0)
                 if traininginfo[0][4] == None :
                     self.Comeback_lbl.setText('')
                 else :
-                    self.Comeback_lbl.setText(f'{traininginfo[0][4]}')
+                    self.Comeback_lbl.setText(f'{traininginfo[0][4].strftime("%H:%M:%S")}')
+                    self.training_btnSW.setCurrentIndex(2)
+                    self.training_btnSW2.setCurrentIndex(0)
 
         elif traininginfo[0][2] !=None and traininginfo[0][3] != None :
-            self.training_infoSW.setCurrentIndex(1)
-            self.training_btnSW.setCurrentIndex(1)
+            self.training_infoSW.setCurrentIndex(2)
+            self.training_btnSW.setCurrentIndex(3)
             self.training_btnSW2.setCurrentIndex(0)
-            self.Join_lbl.setText(f'{traininginfo[0][2]}')
-            self.Leave_lbl.setText(f'{traininginfo[0][3]}')
+            self.Join_lbl.setText(f'{traininginfo[0][2].strftime("%H:%M:%S")}')
+            self.Leave_lbl.setText(f'{traininginfo[0][3].strftime("%H:%M:%S")}')
             if traininginfo[0][5] == None:
                 self.Out_lbl.setText('')
                 self.Comeback_lbl.setText('')
             else :
-                self.Out_lbl.setText(f'{traininginfo[0][5]}')
+                self.Out_lbl.setText(f'{traininginfo[0][5].strftime("%H:%M:%S")}')
                 if traininginfo[0][4] == None :
                     self.Comeback_lbl.setText('')
                 else :
-                    self.Comeback_lbl.setText(f'{traininginfo[0][4]}')
+                    self.Comeback_lbl.setText(f'{traininginfo[0][4].strftime("%H:%M:%S")}')
 
 
 
