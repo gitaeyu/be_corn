@@ -1,10 +1,31 @@
 import pymysql as p
 import sys
 from PyQt5.QtWidgets import *
-from PyQt5 import uic
+from PyQt5.QtCore import *
+from PyQt5 import uic, QtGui
 from datetime import datetime
+import time
 
 form_class = uic.loadUiType('./main.ui')[0]
+
+
+class Thread1(QThread):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.parent = parent
+
+    def run(self):
+        while True:
+            self.parent.chat_textBrowser.clear()
+            self.parent.c.execute(f"select message.*,person.Name from message join person on message.id_number = person.id_num \
+                            where (person.Name = '{self.parent.receiver}' and message.Receiver = '{self.parent.user_name}') or \
+                            (message.Receiver = '{self.parent.receiver}'  and person.Name = '{self.parent.user_name}')")
+            self.parent.conn.commit()
+            chatlist = self.parent.c.fetchall()
+            print(chatlist)
+            for i in chatlist:
+                self.parent.chat_textBrowser.addItem(f'{i[2]}\n \n {i[4]} : {i[1]}\n')
+            time.sleep(1)
 
 
 class Main(QMainWindow, form_class):
@@ -50,6 +71,8 @@ class Main(QMainWindow, form_class):
         self.chat_start_btn.clicked.connect(self.chat_start)
         self.see_chat_list_btn.clicked.connect(self.see_chatlist)
         self.message_list.clicked.connect(self.clickchatlist)
+        self.consult_cb.hide()
+        self.chat1 = Thread1(self)
 
     def clickchatlist(self):
         a = self.message_list.currentItem()
@@ -63,12 +86,11 @@ class Main(QMainWindow, form_class):
 
     # 채팅페이지의 상담 시작 버튼을 클릭하면 실행되는 기능으로 채팅창으로 이동하며 콤보박스의 이름에 따라 각 채팅방이 다른것처럼 보이게 함.
     def chat_start(self):
-        self.receiver = self.consult_cb.currentText()
         if self.receiver == '':
             QMessageBox.critical(self, "교수 정보 없음", "콤보박스를 선택하거나 채팅방을 더블클릭 해주세요")
             return
         self.messageSW.setCurrentIndex(1)
-        self.refresh_chat_textBrowser()
+        self.chat1.start()
 
     # 메세지를 보내는 기능으로 DB에 저장한다.
     def sendMessage(self):
@@ -79,22 +101,20 @@ class Main(QMainWindow, form_class):
         chat_time = now.strftime('%Y-%m-%d %H:%M:%S')
         self.c.execute(f"Insert into message values ({self.id_num},'{a}','{chat_time}','{self.receiver}')")
         self.conn.commit()
-        self.refresh_chat_textBrowser()
 
     # 메세지를 불러오는 기능으로 접속한 ID와 Combobox 또는 채팅방 메세지 리스트의 Receiver가 누구냐에 따라 채팅방 불러옴.
     def refresh_chat_textBrowser(self):
         self.chat_textBrowser.clear()
         self.c.execute(f"select message.*,person.Name from message join person on message.id_number = person.id_num \
-                        where (message.id_number = {self.id_num}) or \
-                        (message.Receiver = '{self.user_name}'  and person.Name = '{self.receiver}')")
+                            where (person.Name = '{self.receiver}' and message.Receiver = '{self.user_name}') or \
+                            (message.Receiver = '{self.receiver}'  and person.Name = '{self.user_name}')")
         chatlist = self.c.fetchall()
         for i in chatlist:
-            self.chat_textBrowser.addItem(f'{i[2]}\n \n {i[4]} : {i[1]}\n')
+            self.chat_textBrowser.append(f'{i[2]}\n \n {i[4]} : {i[1]}\n')
 
     # 채팅방을 불러오는 기능으로 아직 미완성
     def refresh_message_list(self):
         self.message_list.clear()
-
         self.c.execute(f"select a.* from (select message.*,person.name from message \
                         join person on message.id_number = person.id_num where (id_number, Time) \
                         in (select id_number, max(Time) as Time from message group by id_number)\
@@ -347,8 +367,6 @@ class Main(QMainWindow, form_class):
 
         self.c.execute(f"SELECT * FROM person WHERE ID = '{self.id}' AND Password = '{pw}'")
         self.INFO_login = self.c.fetchall()
-        if self.INFO_login == ():
-            return
         print(self.INFO_login)
         self.id_num = self.INFO_login[0][0]
         self.user_name = self.INFO_login[0][5]
@@ -372,6 +390,7 @@ class Main(QMainWindow, form_class):
             self.c.execute(f"Insert into person_info (id_Num,Name,Date,NameDate) values \
                             ({self.id_num},'{self.user_name}','{date}','{self.user_name}{date}')\
                             on duplicate key update Name = '{self.user_name}', Date = '{date}'")
+            self.conn.commit()
 
     # 로그아웃
     def logout(self):
