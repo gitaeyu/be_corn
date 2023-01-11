@@ -16,16 +16,27 @@ class Thread1(QThread):
 
     def run(self):
         while True:
-            self.parent.chat_textBrowser.clear()
-            self.parent.c.execute(f"select message.*,person.Name from message join person on message.id_number = person.id_num \
+            conn = p.connect(host='localhost', port=3306, user='root', password='0000',
+                                  db='beaconapp', charset='utf8')
+            c = conn.cursor()
+            number = c.execute(f"select message.*,person.Name from message join person on message.id_number = person.id_num \
                             where (person.Name = '{self.parent.receiver}' and message.Receiver = '{self.parent.user_name}') or \
                             (message.Receiver = '{self.parent.receiver}'  and person.Name = '{self.parent.user_name}')")
-            self.parent.conn.commit()
-            chatlist = self.parent.c.fetchall()
-            print(chatlist)
-            for i in chatlist:
-                self.parent.chat_textBrowser.addItem(f'{i[2]}\n \n {i[4]} : {i[1]}\n')
-            time.sleep(1)
+            chatlist = c.fetchall()
+            conn.commit()
+            conn.close()
+            row = self.parent.chat_textBrowser.count()
+            if number == row :
+                continue
+            else :
+                self.parent.chat_textBrowser.clear()
+                print(chatlist)
+                for i in chatlist:
+                    self.parent.chat_textBrowser.addItem(f'{i[2]}\n \n {i[4]} : {i[1]}\n')
+                self.parent.chat_textBrowser.scrollToBottom()
+                time.sleep(0.1)
+                self.parent.chat_textBrowser.scrollToBottom()
+
 
 
 class Main(QMainWindow, form_class):
@@ -34,7 +45,7 @@ class Main(QMainWindow, form_class):
         self.Signal_login = False
         self.INFO_login = []
 
-        self.conn = p.connect(host='localhost', port=3306, user='root', password='00000000',
+        self.conn = p.connect(host='localhost', port=3306, user='root', password='0000',
                               db='beaconapp', charset='utf8')
         # 커서 획득
         self.c = self.conn.cursor()
