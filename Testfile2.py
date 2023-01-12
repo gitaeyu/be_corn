@@ -16,12 +16,12 @@ class Thread1(QThread):
 
     def run(self):
         while True:
-            conn = p.connect(host='localhost', port=3306, user='root', password='0000',
+            conn = p.connect(host='localhost', port=3306, user='root', password='00000000',
                                   db='beaconapp', charset='utf8')
             c = conn.cursor()
             number = c.execute(f"select message.*,person.Name from message join person on message.id_number = person.id_num \
                             where (person.Name = '{self.parent.receiver}' and message.Receiver = '{self.parent.user_name}') or \
-                            (message.Receiver = '{self.parent.receiver}'  and person.Name = '{self.parent.user_name}')")
+                            (message.Receiver = '{self.parent.receiver}'  and person.Name = '{self.parent.user_name}')order by time")
             chatlist = c.fetchall()
             conn.commit()
             conn.close()
@@ -30,11 +30,10 @@ class Thread1(QThread):
                 continue
             else :
                 self.parent.chat_textBrowser.clear()
-                print(chatlist)
                 for i in chatlist:
                     self.parent.chat_textBrowser.addItem(f'{i[2]}\n \n {i[4]} : {i[1]}\n')
                 self.parent.chat_textBrowser.scrollToBottom()
-                time.sleep(0.1)
+                time.sleep(0.3)
                 self.parent.chat_textBrowser.scrollToBottom()
 
 
@@ -45,7 +44,7 @@ class Main(QMainWindow, form_class):
         self.Signal_login = False
         self.INFO_login = []
 
-        self.conn = p.connect(host='localhost', port=3306, user='root', password='0000',
+        self.conn = p.connect(host='localhost', port=3306, user='root', password='00000000',
                               db='beaconapp', charset='utf8')
         # 커서 획득
         self.c = self.conn.cursor()
@@ -82,6 +81,7 @@ class Main(QMainWindow, form_class):
         self.chat_start_btn.clicked.connect(self.chat_start)
         self.see_chat_list_btn.clicked.connect(self.see_chatlist)
         self.message_list.clicked.connect(self.clickchatlist)
+        self.Notification_SW.setCurrentIndex(0)
         # self.consult_cb.hide()
         self.chat1 = Thread1(self)
         self.consult_cb.currentIndexChanged.connect(self.consult_changed)
@@ -106,6 +106,7 @@ class Main(QMainWindow, form_class):
         self.messageSW.setCurrentIndex(1)
         self.chat1.start()
 
+
     # 메세지를 보내는 기능으로 DB에 저장한다.
     def sendMessage(self):
         a = self.chat_lineEdit.text()
@@ -121,7 +122,7 @@ class Main(QMainWindow, form_class):
         self.chat_textBrowser.clear()
         self.c.execute(f"select message.*,person.Name from message join person on message.id_number = person.id_num \
                             where (person.Name = '{self.receiver}' and message.Receiver = '{self.user_name}') or \
-                            (message.Receiver = '{self.receiver}'  and person.Name = '{self.user_name}')")
+                            (message.Receiver = '{self.receiver}'  and person.Name = '{self.user_name}') order by time")
         chatlist = self.c.fetchall()
         for i in chatlist:
             self.chat_textBrowser.append(f'{i[2]}\n \n {i[4]} : {i[1]}\n')

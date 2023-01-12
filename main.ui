@@ -19,7 +19,7 @@
   <widget class="QStackedWidget" name="login_SW">
    <property name="geometry">
     <rect>
-     <x>0</x>
+     <x>10</x>
      <y>0</y>
      <width>601</width>
      <height>601</height>
@@ -129,7 +129,7 @@
       </rect>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="page_4">
       <widget class="QPushButton" name="login_btn">
@@ -676,7 +676,7 @@ icon-size: 30px;
       </rect>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="page_20">
       <widget class="QListWidget" name="message_list">
@@ -687,6 +687,12 @@ icon-size: 30px;
          <width>401</width>
          <height>531</height>
         </rect>
+       </property>
+       <property name="editTriggers">
+        <set>QAbstractItemView::NoEditTriggers</set>
+       </property>
+       <property name="currentRow">
+        <number>-1</number>
        </property>
       </widget>
      </widget>
@@ -1783,6 +1789,52 @@ icon-size: 30px;
      <property name="text">
       <string>뒤로</string>
      </property>
+    </widget>
+   </widget>
+  </widget>
+  <widget class="QStackedWidget" name="Notification_SW">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>10</y>
+     <width>561</width>
+     <height>81</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background: transparent</string>
+   </property>
+   <property name="currentIndex">
+    <number>0</number>
+   </property>
+   <widget class="QWidget" name="page_22"/>
+   <widget class="QWidget" name="page_23">
+    <widget class="QListWidget" name="Notification_lw">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>10</y>
+       <width>541</width>
+       <height>61</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background : white</string>
+     </property>
+     <item>
+      <property name="text">
+       <string>새로운 메세지가 왔습니다</string>
+      </property>
+      <property name="font">
+       <font>
+        <family>경기천년바탕 Bold</family>
+        <pointsize>35</pointsize>
+       </font>
+      </property>
+      <property name="textAlignment">
+       <set>AlignHCenter|AlignBottom</set>
+      </property>
+     </item>
     </widget>
    </widget>
   </widget>

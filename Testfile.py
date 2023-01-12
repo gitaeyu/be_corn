@@ -11,17 +11,17 @@ form_class = uic.loadUiType('./main.ui')[0]
 
 class Thread1(QThread):
     def __init__(self, parent):
-        super().__init__(parent)
+        super().__init__()
         self.parent = parent
 
     def run(self):
         while True:
-            conn = p.connect(host='localhost', port=3306, user='root', password='0000',
+            conn = p.connect(host='localhost', port=3306, user='root', password='00000000',
                                   db='beaconapp', charset='utf8')
             c = conn.cursor()
             number = c.execute(f"select message.*,person.Name from message join person on message.id_number = person.id_num \
                             where (person.Name = '{self.parent.receiver}' and message.Receiver = '{self.parent.user_name}') or \
-                            (message.Receiver = '{self.parent.receiver}'  and person.Name = '{self.parent.user_name}')")
+                            (message.Receiver = '{self.parent.receiver}'  and person.Name = '{self.parent.user_name}') order by time")
             chatlist = c.fetchall()
             conn.commit()
             conn.close()
@@ -34,9 +34,71 @@ class Thread1(QThread):
                 for i in chatlist:
                     self.parent.chat_textBrowser.addItem(f'{i[2]}\n \n {i[4]} : {i[1]}\n')
                 self.parent.chat_textBrowser.scrollToBottom()
-                time.sleep(0.1)
+                time.sleep(0.3)
                 self.parent.chat_textBrowser.scrollToBottom()
 
+class Thread2(QThread):
+    def __init__(self, parent):
+        super().__init__()
+        self.parent = parent
+
+    def run(self):
+        while True:
+            conn = p.connect(host='localhost', port=3306, user='root', password='00000000',
+                                  db='beaconapp', charset='utf8')
+            c = conn.cursor()
+            number = c.execute(f"select a.* from (select message.*,person.name from message \
+                            join person on message.id_number = person.id_num where (id_number, Time) \
+                            in (select id_number, max(Time) as Time from message group by id_number)\
+                            order by Time)  as a where receiver ='{self.parent.user_name}'")
+            message_room_list = c.fetchall()
+            conn.commit()
+            conn.close()
+            row = self.parent.message_list.count()
+            if number == row :
+                continue
+            else :
+                self.parent.message_list.clear()
+                for i in message_room_list:
+                    self.parent.message_list.addItem(f'{i[4]}\n {i[1]}')
+                self.parent.message_list.scrollToBottom()
+                time.sleep(0.3)
+                self.parent.message_list.scrollToBottom()
+
+class Thread3(QThread):
+    def __init__(self, parent):
+        super().__init__()
+        self.parent = parent
+
+    def run(self):
+        while True:
+            conn = p.connect(host='localhost', port=3306, user='root', password='00000000',
+                                  db='beaconapp', charset='utf8')
+            c = conn.cursor()
+            numofmessage = c.execute(f"select a.* from (select message.*,person.name from message \
+                            join person on message.id_number = person.id_num \
+                            where message.Receiver = '{self.parent.user_name}') as a")
+            conn.commit()
+            conn.close()
+            prevnumofmessage = self.parent.numofmessage
+
+            if numofmessage == prevnumofmessage :
+                continue
+
+            else :
+                self.parent.numofmessage = numofmessage
+
+                if self.parent.login_SW.currentIndex() == 5 :
+                    continue
+                else:
+                    print(self.parent.login_SW.currentWidget())
+                    self.parent.Notification_SW.setCurrentIndex(1)
+                    time.sleep(5)
+                    self.parent.Notification_SW.setCurrentIndex(0)
+            time.sleep(1)
+    def stop(self):
+        self.quit()
+        self.wait(5000) #5000ms = 5s
 
 
 class Main(QMainWindow, form_class):
@@ -45,7 +107,7 @@ class Main(QMainWindow, form_class):
         self.Signal_login = False
         self.INFO_login = []
 
-        self.conn = p.connect(host='localhost', port=3306, user='root', password='0000',
+        self.conn = p.connect(host='localhost', port=3306, user='root', password='00000000',
                               db='beaconapp', charset='utf8')
         # 커서 획득
         self.c = self.conn.cursor()
@@ -82,8 +144,30 @@ class Main(QMainWindow, form_class):
         self.chat_start_btn.clicked.connect(self.chat_start)
         self.see_chat_list_btn.clicked.connect(self.see_chatlist)
         self.message_list.clicked.connect(self.clickchatlist)
+        self.Notification_SW.setCurrentIndex(0)
+        self.Notification_lw.clicked.connect(self.gotochatting)
         self.consult_cb.hide()
         self.chat1 = Thread1(self)
+        self.chat2 = Thread2(self)
+        self.notification = Thread3(self)
+    def gotochatting(self):
+        conn = p.connect(host='localhost', port=3306, user='root', password='00000000',
+                         db='beaconapp', charset='utf8')
+        c = conn.cursor()
+        c.execute(f"select b.* from (select message.*,person.Name from message \
+                        join person on message.id_number = person.id_num\
+                        where message.Receiver = '{self.user_name}') as b \
+                        order by time desc limit 1;")
+        conn.commit()
+        conn.close()
+        tempinfo = c.fetchall()
+        print(tempinfo)
+        self.receiver = f'{tempinfo[0][4]}'
+        print(self.receiver)
+        self.login_SW.setCurrentIndex(5)
+        self.chat_start()
+        self.Notification_SW.setCurrentIndex(0)
+
 
     def clickchatlist(self):
         a = self.message_list.currentItem()
@@ -97,11 +181,13 @@ class Main(QMainWindow, form_class):
 
     # 채팅페이지의 상담 시작 버튼을 클릭하면 실행되는 기능으로 채팅창으로 이동하며 콤보박스의 이름에 따라 각 채팅방이 다른것처럼 보이게 함.
     def chat_start(self):
+        print(self.receiver)
         if self.receiver == '':
             QMessageBox.critical(self, "교수 정보 없음", "콤보박스를 선택하거나 채팅방을 더블클릭 해주세요")
             return
         self.messageSW.setCurrentIndex(1)
         self.chat1.start()
+        print('5')
 
     # 메세지를 보내는 기능으로 DB에 저장한다.
     def sendMessage(self):
@@ -118,7 +204,7 @@ class Main(QMainWindow, form_class):
         self.chat_textBrowser.clear()
         self.c.execute(f"select message.*,person.Name from message join person on message.id_number = person.id_num \
                             where (person.Name = '{self.receiver}' and message.Receiver = '{self.user_name}') or \
-                            (message.Receiver = '{self.receiver}'  and person.Name = '{self.user_name}')")
+                            (message.Receiver = '{self.receiver}'  and person.Name = '{self.user_name}') order by time")
         chatlist = self.c.fetchall()
         for i in chatlist:
             self.chat_textBrowser.append(f'{i[2]}\n \n {i[4]} : {i[1]}\n')
@@ -131,7 +217,6 @@ class Main(QMainWindow, form_class):
                         in (select id_number, max(Time) as Time from message group by id_number)\
                         order by Time)  as a where receiver ='{self.user_name}'")
         message_room_list = self.c.fetchall()
-        print(message_room_list)
         for i in message_room_list:
             self.message_list.addItem(f'{i[4]}\n {i[1]}')
 
@@ -159,6 +244,7 @@ class Main(QMainWindow, form_class):
         self.login_SW.setCurrentIndex(5)
         self.messageSW.setCurrentIndex(0)
         self.refresh_message_list()
+        self.chat2.start()
 
     # 일정 페이지로 이동
     def moveSchedulePage(self):
@@ -378,7 +464,6 @@ class Main(QMainWindow, form_class):
 
         self.c.execute(f"SELECT * FROM person WHERE ID = '{self.id}' AND Password = '{pw}'")
         self.INFO_login = self.c.fetchall()
-        print(self.INFO_login)
         self.id_num = self.INFO_login[0][0]
         self.user_name = self.INFO_login[0][5]
         now = datetime.now()
@@ -397,11 +482,15 @@ class Main(QMainWindow, form_class):
             self.Stack_W_login.setCurrentIndex(1)
             self.logon_label.setText(f"{self.user_name}님 안녕하세요")
             print('성공')
+            self.numofmessage = self.c.execute(f"select a.* from (select message.*,person.name from message \
+                            join person on message.id_number = person.id_num \
+                            where message.Receiver = '{self.user_name}') as a")
 
             self.c.execute(f"Insert into person_info (id_Num,Name,Date,NameDate) values \
                             ({self.id_num},'{self.user_name}','{date}','{self.user_name}{date}')\
                             on duplicate key update Name = '{self.user_name}', Date = '{date}'")
             self.conn.commit()
+            self.notification.start()
 
     # 로그아웃
     def logout(self):

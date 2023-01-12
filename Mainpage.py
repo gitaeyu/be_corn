@@ -13,7 +13,7 @@ class Main(QMainWindow, form_class):
         self.Signal_login = False
         self.INFO_login = []
 
-        self.conn = p.connect(host='localhost', port=3306, user='root', password='0000',
+        self.conn = p.connect(host='localhost', port=3306, user='root', password='00000000',
                               db='beaconapp', charset='utf8')
         # 커서 획득
         self.c = self.conn.cursor()
