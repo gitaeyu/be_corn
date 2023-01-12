@@ -15,7 +15,8 @@ class Thread1(QThread):
         self.parent = parent
 
     def run(self):
-        while True:
+        while self.parent.MessageSignal:
+            print('test1')
             conn = p.connect(host='localhost', port=3306, user='root', password='00000000',
                                   db='beaconapp', charset='utf8')
             c = conn.cursor()
@@ -36,6 +37,9 @@ class Thread1(QThread):
                 self.parent.chat_textBrowser.scrollToBottom()
                 time.sleep(0.3)
                 self.parent.chat_textBrowser.scrollToBottom()
+    def stop(self):
+        self.quit()
+        self.wait(100) #5000ms = 5s
 
 class Thread2(QThread):
     def __init__(self, parent):
@@ -43,7 +47,8 @@ class Thread2(QThread):
         self.parent = parent
 
     def run(self):
-        while True:
+        while self.parent.chatroomSignal:
+            print('test2')
             conn = p.connect(host='localhost', port=3306, user='root', password='00000000',
                                   db='beaconapp', charset='utf8')
             c = conn.cursor()
@@ -64,14 +69,18 @@ class Thread2(QThread):
                 self.parent.message_list.scrollToBottom()
                 time.sleep(0.3)
                 self.parent.message_list.scrollToBottom()
+    def stop(self):
 
+        self.quit()
+        self.wait(100) #5000ms = 5s
 class Thread3(QThread):
     def __init__(self, parent):
         super().__init__()
         self.parent = parent
 
     def run(self):
-        while True:
+        while self.parent.signal:
+            print('test3')
             conn = p.connect(host='localhost', port=3306, user='root', password='00000000',
                                   db='beaconapp', charset='utf8')
             c = conn.cursor()
@@ -97,8 +106,9 @@ class Thread3(QThread):
                     self.parent.Notification_SW.setCurrentIndex(0)
             time.sleep(1)
     def stop(self):
+        print('stop?')
         self.quit()
-        self.wait(5000) #5000ms = 5s
+        self.wait(100) #5000ms = 5s
 
 
 class Main(QMainWindow, form_class):
@@ -178,6 +188,11 @@ class Main(QMainWindow, form_class):
     def see_chatlist(self):
         self.messageSW.setCurrentIndex(0)
         self.refresh_message_list()
+        self.MessageSignal = False
+        self.chat1.stop()
+        self.chatroomSignal = True
+        self.chat2.start()
+
 
     # 채팅페이지의 상담 시작 버튼을 클릭하면 실행되는 기능으로 채팅창으로 이동하며 콤보박스의 이름에 따라 각 채팅방이 다른것처럼 보이게 함.
     def chat_start(self):
@@ -186,7 +201,10 @@ class Main(QMainWindow, form_class):
             QMessageBox.critical(self, "교수 정보 없음", "콤보박스를 선택하거나 채팅방을 더블클릭 해주세요")
             return
         self.messageSW.setCurrentIndex(1)
+        self.MessageSignal = True
         self.chat1.start()
+        self.chatroomSignal = False
+        self.chat2.stop()
         print('5')
 
     # 메세지를 보내는 기능으로 DB에 저장한다.
@@ -244,6 +262,7 @@ class Main(QMainWindow, form_class):
         self.login_SW.setCurrentIndex(5)
         self.messageSW.setCurrentIndex(0)
         self.refresh_message_list()
+        self.chatroomSignal = True
         self.chat2.start()
 
     # 일정 페이지로 이동
@@ -261,6 +280,10 @@ class Main(QMainWindow, form_class):
     # 메인페이지로 이동
     def moveMainpage(self):
         self.login_SW.setCurrentIndex(0)
+        self.MessageSignal = False
+        self.chat1.stop()
+        self.chatroomSignal = False
+        self.chat2.stop()
 
     # 로그인 페이지로 이동
     def moveLoginPage(self):
@@ -490,6 +513,7 @@ class Main(QMainWindow, form_class):
                             ({self.id_num},'{self.user_name}','{date}','{self.user_name}{date}')\
                             on duplicate key update Name = '{self.user_name}', Date = '{date}'")
             self.conn.commit()
+            self.signal = True
             self.notification.start()
 
     # 로그아웃
@@ -497,6 +521,8 @@ class Main(QMainWindow, form_class):
         self.Signal_login = False
         self.Stack_W_login.setCurrentIndex(0)
         self.logon_label.setText("")
+        self.signal = False
+        self.notification.stop()
 
 
 if __name__ == "__main__":

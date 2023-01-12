@@ -683,9 +683,9 @@ icon-size: 30px;
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>20</y>
+         <y>90</y>
          <width>401</width>
-         <height>531</height>
+         <height>461</height>
         </rect>
        </property>
        <property name="editTriggers">
