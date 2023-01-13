@@ -149,52 +149,68 @@ class Main(QMainWindow, form_class):
     def moveLoginPage(self):
         self.login_SW.setCurrentIndex(1)
 
-    # 출결현황 페이지 - 쿼리문을 사용했어야 했는데 익숙치못해서 리스트 사용함. 조건문의 수정이 필요하다.
+    # 출결현황 페이지
     def make_Att_present(self):
-        self.c.execute(
-            f"select a.*,b.수업시간,b.시작시간 from person_info as a join class_schedule as b on a.Date = b.훈련일자 where a.id_num = {self.id_num}")
-        progress_info = self.c.fetchall()
 
-        attendance = 0
-        late = 0
-        earlyleave = 0
-        out = 0
-        absence = 0
+        progress_info = self.c.execute(f"select a.*,b.수업시간,b.시작시간 from person_info as a \
+                        join class_schedule as b on a.Date = b.훈련일자 where a.id_num = {self.id_num} and a.Date != curdate()")
 
-        for i in progress_info:
-            if i[3] == None or i[2] == None:  # 퇴실 or 입실이 하나라도 안찍혔을때
-                absence += 1  # 결석
-                continue  # 그리고 다음날으로 넘어감
-            seconds = (i[3] - i[2]).total_seconds()  # 퇴실시간에서 입실시간을 밴 시간
-            latetime = datetime.strptime('09:21:00', '%H:%M:%S')  # 지각시간
-            temptime = i[2].strftime('%H:%M:%S')
-            jointime = datetime.strptime(f'{temptime}', '%H:%M:%S')  # 입실시간
-            temptime = i[3].strftime('%H:%M:%S')
-            leavetime = datetime.strptime(f'{temptime}', '%H:%M:%S')
-            earlyleavetime = datetime.strptime('17:00:00', '%H:%M:%S')
-            if latetime < jointime:  # 지각시간 < 입실시간 하지만 퇴실시간은 있음.
-                if seconds < 14400:  # 있던 시간이 4시간보다 적으면 결석으로 처리해버림
-                    absence += 1
-                    continue  # 다음으로 넘어감
-                else:
-                    late += 1
-                    attendance += 1
+        attendance = self.c.execute(f"SELECT * from person_info \
+                    where (((Excursion is not null and timediff(Leave_time,Entrance)-timediff(comeback,excursion) >040000) \
+                    or (Excursion is null and timediff(Leave_time,Entrance) >040000) )and Entrance is not null and \
+                    Leave_time is not null) and id_num = {self.id_num} and Date != curdate()")
 
-            elif leavetime < earlyleavetime:  # 퇴실시간이 정해진 시간보다 빠를때 조퇴로 체크
-                if seconds < 14400:
-                    absence += 1
-                    continue
-                else:
-                    earlyleave += 1
-                    attendance += 1
-            else:
-                if seconds < 14400:
-                    absence += 1
-                    continue
-                else:
-                    attendance += 1
-            if i[5] != None:
-                out += 1
+        late = self.c.execute(f"SELECT * from person_info where (DATE_FORMAT(entrance, '%H:%i:%s')  > '09:20:59') \
+                                and id_num = {self.id_num} and Date != curdate() and ((timediff(Leave_time,Entrance)>040000)\
+                                or (timediff(Leave_time,Entrance)-timediff(Excursion,Comeback) >040000))")
+
+        earlyleave = self.c.execute(f"SELECT * from person_info where DATE_FORMAT(Leave_time,'%H:%i:%s')  < '17:00:00' \
+                                    and id_num = {self.id_num} and Date != curdate() \
+                                    and (timediff(Leave_time,Entrance) > 040000 \
+                                    or timediff(timediff(Leave_time,Entrance),timediff(Comeback,excursion)) > 040000)")
+
+        out = self.c.execute(f"SELECT * from person_info where Excursion is not null and id_num = {self.id_num} \
+                                and Date != curdate() and timediff(Leave_time,Entrance)-timediff(comeback,excursion) >040000")
+
+        absence = self.c.execute(f"SELECT * from person_info where ((Excursion is not null \
+                                and timediff(Leave_time,Entrance)-timediff(comeback,excursion) <040000) \
+                                or timediff(Leave_time,Entrance) < 040000 or Entrance is null or Leave_time is null) \
+                                and id_num = {self.id_num} and Date != curdate()")
+
+        # for i in progress_info:
+        #     if i[3] == None or i[2] == None:  # 퇴실 or 입실이 하나라도 안찍혔을때
+        #         absence += 1  # 결석
+        #         continue  # 그리고 다음날으로 넘어감
+        #     seconds = (i[3] - i[2]).total_seconds()  # 퇴실시간에서 입실시간을 밴 시간
+        #     latetime = datetime.strptime('09:21:00', '%H:%M:%S')  # 지각시간
+        #     temptime = i[2].strftime('%H:%M:%S')
+        #     jointime = datetime.strptime(f'{temptime}', '%H:%M:%S')  # 입실시간
+        #     temptime = i[3].strftime('%H:%M:%S')
+        #     leavetime = datetime.strptime(f'{temptime}', '%H:%M:%S')
+        #     earlyleavetime = datetime.strptime('17:00:00', '%H:%M:%S')
+        #     if latetime < jointime:  # 지각시간 < 입실시간 하지만 퇴실시간은 있음.
+        #         if seconds < 14400:  # 있던 시간이 4시간보다 적으면 결석으로 처리해버림
+        #             absence += 1
+        #             continue  # 다음으로 넘어감
+        #         else:
+        #             late += 1
+        #             attendance += 1
+        #
+        #     elif leavetime < earlyleavetime:  # 퇴실시간이 정해진 시간보다 빠를때 조퇴로 체크
+        #         if seconds < 14400:
+        #             absence += 1
+        #             continue
+        #         else:
+        #             earlyleave += 1
+        #             attendance += 1
+        #     else:
+        #         if seconds < 14400:
+        #             absence += 1
+        #             continue
+        #         else:
+        #             attendance += 1
+        #     if i[5] != None:
+        #         out += 1
 
         # for문에서 정해진 출결현황에 따라 라벨 및 프로그레스바 등을 바꿔줌.
         self.attendance_lbl.setText(f'{attendance}')
@@ -205,8 +221,8 @@ class Main(QMainWindow, form_class):
         attendance_ratio = attendance / 140
         self.my_attendance_ratio_lbl.setText(f'({round(attendance_ratio * 100, 2)}% \t {attendance}/140일)')
         self.my_attendance_ratio_pB.setValue(int(attendance_ratio * 100))
-        progress_ratio = len(progress_info) / 140
-        self.process_progress_ratio_lbl.setText(f'({round(progress_ratio * 100, 2)}% \t {len(progress_info)}/140일)')
+        progress_ratio = progress_info / 140
+        self.process_progress_ratio_lbl.setText(f'({round(progress_ratio * 100, 2)}% \t {progress_info}/140일)')
         self.process_progress_ratio_pB.setValue(int(progress_ratio * 100))
 
     # 입실 시간 기록
