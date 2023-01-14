@@ -9,6 +9,7 @@ import time
 form_class = uic.loadUiType('./main.ui')[0]
 
 
+# 채팅 갱신 스레드
 class Thread1(QThread):
     def __init__(self, parent):
         super().__init__()
@@ -16,8 +17,7 @@ class Thread1(QThread):
 
     def run(self):
         while self.parent.MessageSignal:
-            print('test1')
-            conn = p.connect(host='127.0.0.1', port=3306, user='root', password='00000000',
+            conn = p.connect(host='localhost', port=3306, user='root', password='00000000',
                              db='beaconapp', charset='utf8')
             c = conn.cursor()
             number = c.execute(f"select message.*,person.Name from message join person on message.id_number = person.id_num \
@@ -27,11 +27,11 @@ class Thread1(QThread):
             conn.commit()
             conn.close()
             row = self.parent.chat_textBrowser.count()
+            time.sleep(0.5)
             if number == row:
                 continue
             else:
                 self.parent.chat_textBrowser.clear()
-                print(chatlist)
                 for i in chatlist:
                     self.parent.chat_textBrowser.addItem(f'{i[2]}\n \n {i[4]} : {i[1]}\n')
                 self.parent.chat_textBrowser.scrollToBottom()
@@ -43,6 +43,7 @@ class Thread1(QThread):
         self.wait(100)  # 5000ms = 5s
 
 
+# 채팅방 리스트 갱신 스레드
 class Thread2(QThread):
     def __init__(self, parent):
         super().__init__()
@@ -50,8 +51,7 @@ class Thread2(QThread):
 
     def run(self):
         while self.parent.chatroomSignal:
-            print('test2')
-            conn = p.connect(host='127.0.0.1', port=3306, user='root', password='00000000',
+            conn = p.connect(host='localhost', port=3306, user='root', password='00000000',
                              db='beaconapp', charset='utf8')
             c = conn.cursor()
             number = c.execute(f"select a.* from (select message.*,person.name from message \
@@ -62,6 +62,7 @@ class Thread2(QThread):
             conn.commit()
             conn.close()
             row = self.parent.message_list.count()
+            time.sleep(0.5)
             if number == row:
                 continue
             else:
@@ -69,14 +70,13 @@ class Thread2(QThread):
                 for i in message_room_list:
                     self.parent.message_list.addItem(f'{i[4]}\n {i[1]}')
                 self.parent.message_list.scrollToBottom()
-                time.sleep(0.3)
-                self.parent.message_list.scrollToBottom()
 
     def stop(self):
         self.quit()
         self.wait(100)  # 5000ms = 5s
 
 
+# 채팅 알림 스레드
 class Thread3(QThread):
     def __init__(self, parent):
         super().__init__()
@@ -84,10 +84,7 @@ class Thread3(QThread):
 
     def run(self):
         while self.parent.signal:
-
-            print('test3')
-            print('test중입니다555555555555')
-            conn = p.connect(host='127.0.0.1', port=3306, user='root', password='00000000',
+            conn = p.connect(host='localhost', port=3306, user='root', password='00000000',
                              db='beaconapp', charset='utf8')
             c = conn.cursor()
             numofmessage = c.execute(f"select a.* from (select message.*,person.name from message \
@@ -106,15 +103,13 @@ class Thread3(QThread):
                 if self.parent.login_SW.currentIndex() == 5:
                     continue
                 else:
-                    print(self.parent.login_SW.currentWidget())
                     self.parent.Notification_SW.setCurrentIndex(1)
                     time.sleep(5)
                     self.parent.Notification_SW.setCurrentIndex(0)
 
     def stop(self):
-        print('stop?')
         self.quit()
-        self.wait(100)  # 5000ms = 5s
+        self.wait(100)
 
 
 class Main(QMainWindow, form_class):
@@ -327,41 +322,6 @@ class Main(QMainWindow, form_class):
                                 or timediff(Leave_time,Entrance) < 040000 or Entrance is null or Leave_time is null) \
                                 and id_num = {self.id_num} and Date != curdate()")
 
-        # for i in progress_info:
-        #     if i[3] == None or i[2] == None:  # 퇴실 or 입실이 하나라도 안찍혔을때
-        #         absence += 1  # 결석
-        #         continue  # 그리고 다음날으로 넘어감
-        #     seconds = (i[3] - i[2]).total_seconds()  # 퇴실시간에서 입실시간을 밴 시간
-        #     latetime = datetime.strptime('09:21:00', '%H:%M:%S')  # 지각시간
-        #     temptime = i[2].strftime('%H:%M:%S')
-        #     jointime = datetime.strptime(f'{temptime}', '%H:%M:%S')  # 입실시간
-        #     temptime = i[3].strftime('%H:%M:%S')
-        #     leavetime = datetime.strptime(f'{temptime}', '%H:%M:%S')
-        #     earlyleavetime = datetime.strptime('17:00:00', '%H:%M:%S')
-        #     if latetime < jointime:  # 지각시간 < 입실시간 하지만 퇴실시간은 있음.
-        #         if seconds < 14400:  # 있던 시간이 4시간보다 적으면 결석으로 처리해버림
-        #             absence += 1
-        #             continue  # 다음으로 넘어감
-        #         else:
-        #             late += 1
-        #             attendance += 1
-        #
-        #     elif leavetime < earlyleavetime:  # 퇴실시간이 정해진 시간보다 빠를때 조퇴로 체크
-        #         if seconds < 14400:
-        #             absence += 1
-        #             continue
-        #         else:
-        #             earlyleave += 1
-        #             attendance += 1
-        #     else:
-        #         if seconds < 14400:
-        #             absence += 1
-        #             continue
-        #         else:
-        #             attendance += 1
-        #     if i[5] != None:
-        #         out += 1
-
         # for문에서 정해진 출결현황에 따라 라벨 및 프로그레스바 등을 바꿔줌.
         self.attendance_lbl.setText(f'{attendance}')
         self.late_lbl.setText(f'{late}')
@@ -378,7 +338,7 @@ class Main(QMainWindow, form_class):
     # 입실 시간 기록
     def recordJointime(self):
         now = datetime.now()
-        print(now)
+
         date = now.date()
         jointime = now.strftime('%Y-%m-%d %H:%M:%S')
         self.c.execute(f"update person_info set entrance  = '{jointime}' where namedate = '{self.user_name}{date}'")
@@ -419,12 +379,15 @@ class Main(QMainWindow, form_class):
         date = now.date()
         self.c.execute(f"select * from class_schedule where 훈련일자 = '{date}'")
         todaytraining = self.c.fetchall()
-        todaytraining_start = todaytraining[0][2]
-        todaytraining_end = todaytraining[0][3]
+        if todaytraining == () :
+            todaytraining_start = ''
+            todaytraining_end = ''
+        else :
+            todaytraining_start = todaytraining[0][2]
+            todaytraining_end = todaytraining[0][3]
         self.today_training_lbl.setText(f'{todaytraining_start} ~{todaytraining_end}')
         self.c.execute(f"select * from person_info where id_num = {self.id_num} and date = '{date}'")
         traininginfo = self.c.fetchall()
-        print(traininginfo)
 
         if traininginfo[0][2] == None:
             self.training_infoSW.setCurrentIndex(0)
@@ -477,7 +440,7 @@ class Main(QMainWindow, form_class):
         self.c.execute(f"SELECT * From Schedule Inner Join  person on person.id_num = schedule.id_num \
                         Where date = '{self.datestring}'")
         schedulelist = self.c.fetchall()
-        print(schedulelist)
+
         for i in range(len(schedulelist)):
             self.schedule_listView.addItem(f'{schedulelist[i][8]}\n {schedulelist[i][2]}')
 
@@ -485,7 +448,7 @@ class Main(QMainWindow, form_class):
     def scheduleclick(self):
         self.date = self.scheduleCalendar.selectedDate()
         self.datestring = self.date.toString("yyyy-MM-dd")
-        print(self.datestring)
+
         self.selectedDate_lbl1.setText(self.date.toString("yyyy-MM-dd"))
         self.selectedDate_lbl2.setText(self.date.toString("yyyy-MM-dd"))
 
@@ -500,7 +463,6 @@ class Main(QMainWindow, form_class):
             f"INSERT INTO Schedule VALUES ('{self.INFO_login[0][0]}','{self.datestring}','{schedule_contents}')")
         self.conn.commit()
         self.schedule_textEdit.clear()
-        print("성공")
 
     # 로그인
     def login_Check(self):
@@ -529,7 +491,6 @@ class Main(QMainWindow, form_class):
             self.login_pw_lineEdit.clear()
             self.Stack_W_login.setCurrentIndex(1)
             self.logon_label.setText(f"{self.user_name}님 안녕하세요")
-            print('성공')
             self.numofmessage = self.c.execute(f"select a.* from (select message.*,person.name from message \
                             join person on message.id_number = person.id_num \
                             where message.Receiver = '{self.user_name}') as a")
